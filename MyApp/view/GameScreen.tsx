@@ -5,8 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 export default function GameScreen() {
   return (
     <View style={styles.container}>
+      <StatusBar style='light' />
       <Text>This is the Game Screen</Text>
-      <StatusBar style="auto" />
     </View>
   );
 }
