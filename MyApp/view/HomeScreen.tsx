@@ -2,12 +2,19 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
+import { ParamListBase } from '@react-navigation/native';
 
-type HomeScreenProps = {
-  navigation: StackNavigationProp<any, any>;
-};
+// Stack Navigator에서 사용할 Param 타입 정의
+interface RootStackParamList extends ParamListBase {
+  Game: undefined;
+}
 
-export default function HomeScreen({ navigation }: HomeScreenProps) {
+// navigation 타입 지정
+interface HomeScreenProps {
+  navigation: StackNavigationProp<RootStackParamList, 'Game'>;
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -22,7 +29,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -55,3 +62,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+export default HomeScreen;
