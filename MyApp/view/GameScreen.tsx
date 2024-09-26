@@ -1,11 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { ParamListBase } from '@react-navigation/native';
-
-// 맵 타일을 휴대폰 크기에 맞게 조정
-
 
 // Stack Navigator에서 사용할 Param 타입 정의
 interface RootStackParamList extends ParamListBase {
@@ -34,14 +31,38 @@ const mapMatrix = [
 ];
 
 const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
+  const [score, setScore] = useState(0); // 점수는 0으로 초기화
+  const [isGameStarted, setIsGameStarted] = useState(false);  // 게임 시작 여부 상태
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isGameStarted) {
+      interval = setInterval(() => {
+        setScore((prevScore) => prevScore + 1);  // 1초에 10씩 증가
+      }, 100);
+    }
+    return () => {
+      if (interval) clearInterval(interval);  // 컴포넌트가 언마운트되면 interval 정리
+    };
+  }, [isGameStarted]);
+
+  const startGame = () => {
+    setScore(0);  // 게임 시작 시 점수를 0으로 초기화
+    setIsGameStarted(true);  // 게임 시작
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style='light' />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.arrowButton} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={styles.arrowButton} onPress={() => {
+            setScore(0); // 점수를 0으로 초기화
+            setIsGameStarted(false); // 게임 종료
+            navigation.navigate('Home'); // 홈 화면으로 이동
+          }}>
           <Image source={require('../image/arrow.webp')} style={{ width: 60, height: 60 }} />
         </TouchableOpacity>
-        <Text style={styles.score}>0</Text>
+        <Text style={styles.score}>{score}</Text>
       </View>
 
       {/* 타일 맵 그리기 */}
@@ -58,7 +79,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
           </View>
         ))}
       </View>
-      <View style={styles.operation}></View>
+
+      {/* 게임 시작 버튼 */}
+      <View style={styles.operation}>
+        {!isGameStarted && (
+          <TouchableOpacity style={styles.startButton} onPress={startGame}>
+            <Text style={styles.startText}>게임 시작</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
@@ -99,6 +128,19 @@ const styles = StyleSheet.create({
   },
   operation: {
     flex: 2.6,
+    alignItems: 'center',
+  },
+  startButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    marginTop: '20%',
+  },
+  startText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 });
 
