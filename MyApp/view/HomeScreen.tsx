@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { ParamListBase } from '@react-navigation/native';
+import { colors } from "./colors";
 
 // Stack Navigator에서 사용할 Param 타입 정의
 interface RootStackParamList extends ParamListBase {
@@ -51,7 +52,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   button: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.buttonColor,
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 10,
