@@ -13,7 +13,7 @@ interface GameScreenProps {
   navigation: StackNavigationProp<RootStackParamList, 'Home'>;
 }
 
-const initialPlayerPosition = { row: 7, col: 6 };
+const initialPlayerPosition = { row: 5, col: 6 };
 const mapMatrix = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -33,37 +33,70 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
   const [score, setScore] = useState(0);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [playerPosition, setPlayerPosition] = useState(initialPlayerPosition);
+  const [bombs, setBombs] = useState<{ row: number, col: number, explode: boolean }[]>([]);
 
+  // 플레이어 이동 함수
   const movePlayer = (direction: string) => {
     const { row, col } = playerPosition;
     let newRow = row;
     let newCol = col;
 
-    // 벽 범위 내에 플레이어를 이동한다
-    if (direction === 'up' && row > 2.5) newRow = row - 0.5;
-    else if (direction === 'down' && row <= 11.0) newRow = row + 0.5;
-    else if (direction === 'left' && col > 1.5) newCol = col - 0.5;
-    else if (direction === 'right' && col <= 10.0) newCol = col + 0.5;
+    if (direction === 'up' && mapMatrix[row - 1][col] === 0) newRow = row - 1;
+    else if (direction === 'down' && mapMatrix[row + 1][col] === 0) newRow = row + 1;
+    else if (direction === 'left' && mapMatrix[row][col - 1] === 0) newCol = col - 1;
+    else if (direction === 'right' && mapMatrix[row][col + 1] === 0) newCol = col + 1;
 
     setPlayerPosition({ row: newRow, col: newCol });
   };
 
+  // 점수 증가 처리 함수
+  const startScoreInterval = () => {
+    return setInterval(() => {
+      setScore((prevScore) => prevScore + 1);
+    }, 100);
+  };
+
+  // 폭탄 및 폭발 처리 함수
+  const startBombInterval = () => {
+    return setInterval(() => {
+      const newBomb = {
+        row: Math.floor(Math.random() * 10) + 1,
+        col: Math.floor(Math.random() * 10) + 1,
+        explode: false,
+      };
+      setBombs((prevBombs) => [...prevBombs, newBomb]);
+
+      setTimeout(() => {
+        setBombs((prevBombs) =>
+          prevBombs.map((bomb, index) =>
+            index === prevBombs.length - 1 ? { ...bomb, explode: true } : bomb
+          )
+        );
+
+        setTimeout(() => {
+          setBombs((prevBombs) => prevBombs.slice(1)); // 폭탄 제거
+        }, 500);
+      }, 2000);
+    }, 3000); // 3초마다 새로운 폭탄 생성
+  };
+
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let scoreInterval: NodeJS.Timeout | null = null;
+    let bombInterval: NodeJS.Timeout | null = null;
+
     if (isGameStarted) {
-      interval = setInterval(() => {
-        setScore((prevScore) => prevScore + 1);
-      }, 100);
+      scoreInterval = startScoreInterval();
+      bombInterval = startBombInterval();
     }
+
     return () => {
-      if (interval) clearInterval(interval);
+      if (scoreInterval) clearInterval(scoreInterval);
+      if (bombInterval) clearInterval(bombInterval);
     };
   }, [isGameStarted]);
 
   const startGame = () => {
-    setScore(0);
     setIsGameStarted(true);
-    setPlayerPosition(initialPlayerPosition);
   };
 
   return (
@@ -74,8 +107,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
           style={styles.arrowButton}
           onPress={() => {
             setScore(0);
-            setIsGameStarted(false);
             setPlayerPosition(initialPlayerPosition);
+            setBombs([]);
+            setIsGameStarted(false);
             navigation.navigate('Home');
           }}
         >
@@ -84,31 +118,38 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
         <Text style={styles.score}>{score}</Text>
       </View>
 
-      {/* 타일 맵 그리기 */}
+      {/* 맵 그리기 */}
       <View style={styles.map}>
         {mapMatrix.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
-            {row.map((tile, colIndex) => (
-              <Image
-                key={colIndex}
-                source={tile === 1 ? require('../image/wall.webp') : require('../image/land.webp')}
-                style={styles.tile}
-              />
-            ))}
+            {row.map((tile, colIndex) => {
+              const isPlayer = rowIndex === playerPosition.row && colIndex === playerPosition.col;
+              const isBomb = bombs.find(bomb => bomb.row === rowIndex && bomb.col === colIndex);
+
+              if (isPlayer) {
+                return <Image key={colIndex} source={require('../image/player.webp')} style={styles.tile} />;
+              }
+
+              if (isBomb) {
+                return (
+                  <Image
+                    key={colIndex}
+                    source={isBomb.explode ? require('../image/explosion.webp') : require('../image/bomb.webp')}
+                    style={styles.tile}
+                  />
+                );
+              }
+
+              return (
+                <Image
+                  key={colIndex}
+                  source={tile === 1 ? require('../image/wall.webp') : require('../image/land.webp')}
+                  style={styles.tile}
+                />
+              );
+            })}
           </View>
         ))}
-
-        {/* 플레이어를 타일 위에 그리기 */}
-        <Image
-          source={require('../image/player.webp')}
-          style={[
-            styles.player,
-            {
-              top: playerPosition.row * 30, // 타일 크기에 맞춰서 배치
-              left: playerPosition.col * 30,
-            },
-          ]}
-        />
       </View>
 
       {/* 게임 시작 버튼 및 방향키 */}
@@ -176,11 +217,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   tile: {
-    width: 30,
-    height: 30,
-  },
-  player: {
-    position: 'absolute',
     width: 30,
     height: 30,
   },
