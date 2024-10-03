@@ -7,6 +7,7 @@ import { colors } from './colors';
 
 interface RootStackParamList extends ParamListBase {
   Home: undefined;
+  Result: undefined;
 }
 
 interface GameScreenProps {
@@ -14,6 +15,11 @@ interface GameScreenProps {
 }
 
 const initialPlayerPosition = { row: 5, col: 6 };
+const initialState = {
+  score: 0,
+  playerPosition: initialPlayerPosition,
+  bombs: [],
+};
 const mapMatrix = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -33,7 +39,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
   const [score, setScore] = useState(0);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [playerPosition, setPlayerPosition] = useState(initialPlayerPosition);
-  const [bombs, setBombs] = useState<{ row: number, col: number, explode: boolean }[]>([]);
+  const [bombs, setBombs] = useState<{ row: number, col: number, explode: boolean, affectedTiles?: { row: number, col: number }[] }[]>([]);
 
   // 플레이어 이동 함수
   const movePlayer = (direction: string) => {
@@ -63,21 +69,33 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
         row: Math.floor(Math.random() * 10) + 1,
         col: Math.floor(Math.random() * 10) + 1,
         explode: false,
+        affectedTiles: [],
       };
       setBombs((prevBombs) => [...prevBombs, newBomb]);
 
       setTimeout(() => {
+        // 십자 범위로 폭발 처리
         setBombs((prevBombs) =>
-          prevBombs.map((bomb, index) =>
-            index === prevBombs.length - 1 ? { ...bomb, explode: true } : bomb
-          )
+          prevBombs.map((bomb) => {
+            if (bomb === newBomb) {
+              const affectedTiles = [
+                { row: bomb.row, col: bomb.col }, // 폭탄 위치
+                { row: bomb.row - 1, col: bomb.col }, // 위
+                { row: bomb.row + 1, col: bomb.col }, // 아래
+                { row: bomb.row, col: bomb.col - 1 }, // 왼쪽
+                { row: bomb.row, col: bomb.col + 1 }, // 오른쪽
+              ].filter(({ row, col }) => mapMatrix[row] && mapMatrix[row][col] === 0); // 바닥 타일만 포함
+              return { ...bomb, explode: true, affectedTiles };
+            }
+            return bomb;
+          })
         );
 
         setTimeout(() => {
           setBombs((prevBombs) => prevBombs.slice(1)); // 폭탄 제거
-        }, 500);
-      }, 2000);
-    }, 3000); // 3초마다 새로운 폭탄 생성
+        }, 500); // 폭발 이미지 0.5초 동안 유지
+      }, 2000); // 2초 후 폭발
+    }, 2000); // 2초 마다 새로운 폭탄 생성
   };
 
   useEffect(() => {
@@ -125,19 +143,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
             {row.map((tile, colIndex) => {
               const isPlayer = rowIndex === playerPosition.row && colIndex === playerPosition.col;
               const isBomb = bombs.find(bomb => bomb.row === rowIndex && bomb.col === colIndex);
+              const isExplosion = bombs.some(bomb => bomb.explode && bomb.affectedTiles?.some(tile => tile.row === rowIndex && tile.col === colIndex));
 
               if (isPlayer) {
                 return <Image key={colIndex} source={require('../image/player.webp')} style={styles.tile} />;
               }
 
-              if (isBomb) {
-                return (
-                  <Image
-                    key={colIndex}
-                    source={isBomb.explode ? require('../image/explosion.webp') : require('../image/bomb.webp')}
-                    style={styles.tile}
-                  />
-                );
+              if (isExplosion) {
+                return <Image key={colIndex} source={require('../image/explosion.webp')} style={styles.tile} />;
+              }
+
+              if (isBomb && !isExplosion) {
+                return <Image key={colIndex} source={require('../image/bomb.webp')} style={styles.tile} />;
               }
 
               return (
