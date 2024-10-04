@@ -6,7 +6,7 @@ export default function ResultScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style='light' />
-      <Text>This is the Result Screen</Text>
+      <Text>Game Over</Text>
     </View>
   );
 }

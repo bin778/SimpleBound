@@ -15,11 +15,7 @@ interface GameScreenProps {
 }
 
 const initialPlayerPosition = { row: 5, col: 6 };
-const initialState = {
-  score: 0,
-  playerPosition: initialPlayerPosition,
-  bombs: [],
-};
+
 const mapMatrix = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -98,6 +94,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
     }, 2000); // 2초 마다 새로운 폭탄 생성
   };
 
+  // 점수 및 폭발 처리 이펙트 구현
   useEffect(() => {
     let scoreInterval: NodeJS.Timeout | null = null;
     let bombInterval: NodeJS.Timeout | null = null;
@@ -116,6 +113,23 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
   const startGame = () => {
     setIsGameStarted(true);
   };
+
+  // 플레이어 피격 처리 이펙트 구현
+  useEffect(() => {
+    // 플레이어가 폭발 범위에 있는지 확인
+    const isPlayerHit = bombs.some(bomb => bomb.explode && bomb.affectedTiles?.some(tile => 
+      tile.row === playerPosition.row && tile.col === playerPosition.col
+    ));
+
+    // 폭발 범위에 있으면 게임 오버 처리
+    if (isPlayerHit) {
+      setIsGameStarted(false);
+      setScore(0);
+      setPlayerPosition(initialPlayerPosition);
+      setBombs([]);
+      navigation.navigate('Result');
+    }
+  }, [bombs, playerPosition])
 
   return (
     <View style={styles.container}>
