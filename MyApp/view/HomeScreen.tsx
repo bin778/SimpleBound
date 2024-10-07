@@ -5,12 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import { ParamListBase } from '@react-navigation/native';
 import { colors } from "./colors";
 
-// Stack Navigator에서 사용할 Param 타입 정의
 interface RootStackParamList extends ParamListBase {
   Game: undefined;
 }
 
-// navigation 타입 지정
 interface HomeScreenProps {
   navigation: StackNavigationProp<RootStackParamList, 'Game'>;
 }

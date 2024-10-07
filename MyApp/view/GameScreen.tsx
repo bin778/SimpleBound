@@ -7,7 +7,7 @@ import { colors } from './colors';
 
 interface RootStackParamList extends ParamListBase {
   Home: undefined;
-  Result: undefined;
+  Result: { score: number };
 }
 
 interface GameScreenProps {
@@ -100,6 +100,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
     }, creationTime); // 새로운 폭탄 생성
   };
 
+  // 게임 스테이지 구현
   useEffect(() => {
     if (score >= 150 && stage === 1) { // 2스테이지
       setCreationTime(1000);
@@ -141,12 +142,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
     };
   }, [isGameStarted, explodeHit, explodeTime, creationTime]);
 
+  // 게임 시작
   const startGame = () => {
     setIsGameStarted(true);
   };
 
-  // 스테이지 리셋
-  const StageReset = () => {
+  // 게임 리셋
+  const resetGame = () => {
     setScore(0);
     setStage(1);
     setExplodeHit(500);
@@ -166,8 +168,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
 
     // 폭발 범위에 있으면 게임 오버 처리
     if (isPlayerHit) {
-      StageReset();
-      navigation.navigate('Result');
+      resetGame();
+      navigation.navigate('Result', { score });
     }
   }, [bombs, playerPosition])
 
@@ -178,7 +180,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
         <TouchableOpacity
           style={styles.arrowButton}
           onPress={() => {
-            StageReset();
+            resetGame();
             navigation.navigate('Home');
           }}
         >

@@ -15,7 +15,7 @@ export default function App() {
       <Tab.Navigator initialRouteName="Home">
         <Tab.Screen name="Home" component={HomeScreen} options={{tabBarStyle: {display: 'none'}, headerShown: false }} />
         <Tab.Screen name="Game" component={GameScreen} options={{tabBarStyle: {display: 'none'}, headerShown: false }} />
-        <Tab.Screen name="Result" component={ResultScreen} options={{headerShown: false}} />
+        <Tab.Screen name="Result" component={ResultScreen} options={{tabBarStyle: {display: 'none'}, headerShown: false }} />
       </Tab.Navigator>
     </NavigationContainer>
   );
