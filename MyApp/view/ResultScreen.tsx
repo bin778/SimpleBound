@@ -25,12 +25,13 @@ const ResultScreen: React.FC<ResultScreenProps> = ({ navigation }) => {
   const [rankings, setRankings] = useState<Ranking[]>([]);
   const [playerName, setPlayerName] = useState('');
   const [isInTopFive, setIsInTopFive] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(true);
+  const [isNotRegistered, setIsNotRegistered] = useState(true);
 
   useEffect(() => {
     loadRankings();
   }, []);
 
+  // 랭킹 불러오기
   const loadRankings = async () => {
     try {
       const storedRankings = await AsyncStorage.getItem('rankings');
@@ -42,6 +43,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({ navigation }) => {
     }
   };
 
+  // 랭킹 저장하기
   const saveRankings = async (updatedRankings: Ranking[]) => {
     try {
       await AsyncStorage.setItem('rankings', JSON.stringify(updatedRankings));
@@ -51,6 +53,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({ navigation }) => {
     }
   };
 
+  // 랭킹 등록하기
   const handleSaveRanking = () => {
     const newRanking: Ranking = { name: playerName, score };
     const updatedRankings = [...rankings, newRanking]
@@ -58,10 +61,11 @@ const ResultScreen: React.FC<ResultScreenProps> = ({ navigation }) => {
       .slice(0, 5); // 상위 5위까지 출력
 
     saveRankings(updatedRankings);
-    setIsRegistered(false);
+    setIsNotRegistered(false); // 랭킹 등록 여부 확인
     setIsInTopFive(false);
   };
 
+  // 랭킹 초기화하기
   const resetRankings = async () => {
     try {
       await AsyncStorage.removeItem('rankings'); // AsyncStorage에서 랭킹 데이터 삭제
@@ -85,8 +89,8 @@ const ResultScreen: React.FC<ResultScreenProps> = ({ navigation }) => {
         <Text style={styles.title}>당신의 점수는?</Text>
         <Text style={styles.score}>{score}점</Text>
       </View>
-
-      {isInTopFive && isRegistered && (
+      {/* 점수가 5위 안에 들고 한 번만 랭킹 등록 가능(한번 랭킹이 등록되면 다시 등록 불가) */}
+      {isInTopFive && isNotRegistered && (
         <View style={styles.inputContainer}>
           <Text style={styles.label}>이름을 입력하세요!</Text>
           <TextInput
@@ -100,7 +104,7 @@ const ResultScreen: React.FC<ResultScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       )}
-
+      {/* 1~5위 까지의 가장 높은 점수의 랭킹을 보여주기 */}
       <View style={styles.rankingsContainer}>
         <FlatList
           data={rankings}
@@ -114,17 +118,18 @@ const ResultScreen: React.FC<ResultScreenProps> = ({ navigation }) => {
           )}
         />
       </View>
-
       <View style={styles.footer}>
+        {/* 랭킹 초기화하기 */}
         <TouchableOpacity onPress={resetRankings}>
           <Text style={styles.footerButton}>초기화</Text>
         </TouchableOpacity>
+        {/* 게임 다시 시작하기 */}
         <TouchableOpacity onPress={() => {
-            setIsRegistered(true);
+            setIsNotRegistered(true);
             setPlayerName('');
             navigation.navigate('Home');
           }}>
-          <Text style={[styles.footerButton]}>다시하기</Text>
+          <Text style={styles.footerButton}>다시하기</Text>
         </TouchableOpacity>
       </View>
     </View>

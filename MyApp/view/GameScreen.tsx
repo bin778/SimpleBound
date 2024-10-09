@@ -3,7 +3,12 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { ParamListBase } from '@react-navigation/native';
-import { colors } from './colors';
+
+// 게임 컴포넌트
+import { colors } from './Component/colors';
+import { initialPlayerPosition, mapMatrix } from './Component/MapMatrix';
+import ControlKey from './Component/ControlKey';
+import MapPaint from './Component/MapPaint';
 
 interface RootStackParamList extends ParamListBase {
   Home: undefined;
@@ -13,23 +18,6 @@ interface RootStackParamList extends ParamListBase {
 interface GameScreenProps {
   navigation: StackNavigationProp<RootStackParamList, 'Home'>;
 }
-
-const initialPlayerPosition = { row: 5, col: 6 };
-
-const mapMatrix = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-];
 
 const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
   const [score, setScore] = useState(0);
@@ -42,20 +30,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
   const [explodeHit, setExplodeHit] = useState(500);
   const [explodeTime, setExplodeTime] = useState(2000);
   const [creationTime, setCreationTime] = useState(2000);
-
-  // 플레이어 이동 함수
-  const movePlayer = (direction: string) => {
-    const { row, col } = playerPosition;
-    let newRow = row;
-    let newCol = col;
-
-    if (direction === 'up' && mapMatrix[row - 1][col] === 0) newRow = row - 1;
-    else if (direction === 'down' && mapMatrix[row + 1][col] === 0) newRow = row + 1;
-    else if (direction === 'left' && mapMatrix[row][col - 1] === 0) newCol = col - 1;
-    else if (direction === 'right' && mapMatrix[row][col + 1] === 0) newCol = col + 1;
-
-    setPlayerPosition({ row: newRow, col: newCol });
-  };
 
   // 점수 증가 처리 함수
   const startScoreInterval = () => {
@@ -190,37 +164,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
       </View>
 
       {/* 맵 그리기 */}
-      <View style={styles.map}>
-        {mapMatrix.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((tile, colIndex) => {
-              const isPlayer = rowIndex === playerPosition.row && colIndex === playerPosition.col;
-              const isBomb = bombs.find(bomb => bomb.row === rowIndex && bomb.col === colIndex);
-              const isExplosion = bombs.some(bomb => bomb.explode && bomb.affectedTiles?.some(tile => tile.row === rowIndex && tile.col === colIndex));
-
-              if (isPlayer) {
-                return <Image key={colIndex} source={require('../image/player.webp')} style={styles.tile} />;
-              }
-
-              if (isExplosion) {
-                return <Image key={colIndex} source={require('../image/explosion.webp')} style={styles.tile} />;
-              }
-
-              if (isBomb && !isExplosion) {
-                return <Image key={colIndex} source={require('../image/bomb.webp')} style={styles.tile} />;
-              }
-
-              return (
-                <Image
-                  key={colIndex}
-                  source={tile === 1 ? require('../image/wall.webp') : require('../image/land.webp')}
-                  style={styles.tile}
-                />
-              );
-            })}
-          </View>
-        ))}
-      </View>
+      <MapPaint 
+        mapMatrix={mapMatrix} 
+        playerPosition={playerPosition} 
+        bombs={bombs} 
+      />
 
       {/* 게임 시작 버튼 및 방향키 */}
       <View style={styles.operation}>
@@ -229,27 +177,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
             <Text style={styles.startText}>게임 시작</Text>
           </TouchableOpacity>
         ) : (
-          <View style={styles.controlPanel}>
-            <View style={styles.controlRow}>
-              <TouchableOpacity style={styles.controlButton} onPress={() => movePlayer('up')}>
-                <Text style={styles.controlButtonText}>▲</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.controlRow}>
-              <TouchableOpacity style={styles.controlButton} onPress={() => movePlayer('left')}>
-                <Text style={styles.controlButtonText}>◀</Text>
-              </TouchableOpacity>
-              <View style={styles.controlSpacer} />
-              <TouchableOpacity style={styles.controlButton} onPress={() => movePlayer('right')}>
-                <Text style={styles.controlButtonText}>▶</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.controlRow}>
-              <TouchableOpacity style={styles.controlButton} onPress={() => movePlayer('down')}>
-                <Text style={styles.controlButtonText}>▼</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <ControlKey playerPosition={playerPosition} setPlayerPosition={setPlayerPosition} />
         )}
       </View>
     </View>
@@ -278,18 +206,6 @@ const styles = StyleSheet.create({
     fontSize: 55,
     fontWeight: '500',
   },
-  map: {
-    flex: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-  },
-  tile: {
-    width: 30,
-    height: 30,
-  },
   operation: {
     flex: 2.6,
     alignItems: 'center',
@@ -305,34 +221,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  controlPanel: {
-    marginTop: '-7%',
-  },
-  controlRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  controlButton: {
-    width: 80,
-    height: 80,
-    backgroundColor: colors.metalicColor,
-    borderWidth: 2,
-    borderColor: colors.neonColor,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: 5,
-  },
-  controlButtonText: {
-    color: colors.neonColor,
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  controlSpacer: {
-    width: 100,
-    height: 100,
   },
 });
 

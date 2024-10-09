@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
 import { ParamListBase } from '@react-navigation/native';
-import { colors } from "./colors";
+import { colors } from "./Component/colors";
 
 interface RootStackParamList extends ParamListBase {
   Game: undefined;
