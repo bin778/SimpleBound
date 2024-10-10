@@ -22,7 +22,8 @@ interface GameScreenProps {
 const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
   const [score, setScore] = useState(0);
   const [stage, setStage] = useState(1);
-  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [isGameStarted, setIsGameStarted] = useState(false); // 게임 시작 여부 처리
+  const [isGameOver, setIsGameOver] = useState(false); // 게임 오버 처리
   const [playerPosition, setPlayerPosition] = useState(initialPlayerPosition);
   const [bombs, setBombs] = useState<{ row: number, col: number, explode: boolean, affectedTiles?: { row: number, col: number }[] }[]>([]);
 
@@ -50,7 +51,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
       setBombs((prevBombs) => [...prevBombs, newBomb]);
 
       setTimeout(() => {
-        // 십자 범위로 폭발 처리
         setBombs((prevBombs) =>
           prevBombs.map((bomb) => {
             if (bomb === newBomb) {
@@ -69,31 +69,31 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
 
         setTimeout(() => {
           setBombs((prevBombs) => prevBombs.slice(1)); // 폭탄 제거
-        }, explodeHit); // 플레이어가 닿으면 피격
-      }, explodeTime); // 폭탄 생성 후 폭발
-    }, creationTime); // 새로운 폭탄 생성
+        }, explodeHit);
+      }, explodeTime);
+    }, creationTime);
   };
 
-  // 게임 스테이지 구현
+  // 게임 스테이지 조정
   useEffect(() => {
-    if (score >= 150 && stage === 1) { // 2스테이지
+    if (score >= 150 && stage === 1) { 
       setCreationTime(1000);
       setStage(2);
-    } else if (score >= 300 && stage === 2) { // 3스테이지
+    } else if (score >= 300 && stage === 2) { 
       setExplodeHit(750);
       setCreationTime(700);
       setStage(3);
-    } else if (score >= 450 && stage === 3) { // 4 스테이지
+    } else if (score >= 450 && stage === 3) { 
       setCreationTime(500);
       setStage(4);
-    } else if (score >= 600 && stage === 4) { // 5 스테이지
+    } else if (score >= 600 && stage === 4) { 
       setExplodeHit(1000);
       setExplodeTime(1000);
       setStage(5);
-    } else if (score >= 750 && stage === 5) { // 6 스테이지
+    } else if (score >= 750 && stage === 5) { 
       setCreationTime(250);
       setStage(6);
-    } else if (score >= 900 && stage === 6) { // 7 스테이지
+    } else if (score >= 900 && stage === 6) { 
       setExplodeHit(1200);
       setCreationTime(150);
       setStage(7);
@@ -105,7 +105,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
     let scoreInterval: NodeJS.Timeout | null = null;
     let bombInterval: NodeJS.Timeout | null = null;
 
-    if (isGameStarted) {
+    if (isGameStarted && !isGameOver) { // 게임 오버 상태가 아닐 때만 실행
       scoreInterval = startScoreInterval();
       bombInterval = startBombInterval();
     }
@@ -114,7 +114,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
       if (scoreInterval) clearInterval(scoreInterval);
       if (bombInterval) clearInterval(bombInterval);
     };
-  }, [isGameStarted, explodeHit, explodeTime, creationTime]);
+  }, [isGameStarted, isGameOver, explodeHit, explodeTime, creationTime]);
 
   // 게임 시작
   const startGame = () => {
@@ -131,26 +131,34 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
     setPlayerPosition(initialPlayerPosition);
     setBombs([]);
     setIsGameStarted(false);
-  }
+    setIsGameOver(false);
+  };
+
+  // 게임 오버 처리
+  const handleGameOver = () => {
+    setIsGameOver(true);
+    setTimeout(() => {
+      resetGame();
+      navigation.navigate('Result', { score });
+    }, 3000); // 3초 후 게임 리셋 및 결과 화면으로 이동
+  };
 
   // 플레이어 피격 처리 이펙트 구현
   useEffect(() => {
-    // 플레이어가 폭발 범위에 있는지 확인
     const isPlayerHit = bombs.some(bomb => bomb.explode && bomb.affectedTiles?.some(tile => 
       tile.row === playerPosition.row && tile.col === playerPosition.col
     ));
 
-    // 폭발 범위에 있으면 게임 오버 처리
     if (isPlayerHit) {
-      resetGame();
-      navigation.navigate('Result', { score });
+      handleGameOver();
     }
-  }, [bombs, playerPosition])
+  }, [bombs, playerPosition]);
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       <View style={styles.header}>
+        {/* 게임 종료하기 */}
         <TouchableOpacity
           style={styles.arrowButton}
           onPress={() => {
@@ -177,7 +185,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ navigation }) => {
             <Text style={styles.startText}>게임 시작</Text>
           </TouchableOpacity>
         ) : (
-          <ControlKey playerPosition={playerPosition} setPlayerPosition={setPlayerPosition} />
+          !isGameOver && ( // 게임 오버 상태가 아닐 때만 조작 가능
+            <ControlKey playerPosition={playerPosition} setPlayerPosition={setPlayerPosition} />
+          )
         )}
       </View>
     </View>
